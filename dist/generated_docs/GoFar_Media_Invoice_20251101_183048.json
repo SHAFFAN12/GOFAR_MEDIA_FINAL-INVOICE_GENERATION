@@ -1,0 +1,22 @@
+{
+    "company": "GoFar Media",
+    "doc_type": "Invoice",
+    "form_data": {
+        "Custom Title (Optional)": "5545454",
+        "M/s": "54",
+        "Campaign": "545",
+        "Date": "01-11-2025",
+        "Invoice No": "454",
+        "Invoice Month": "54",
+        "line_items": [
+            {
+                "Description": "545",
+                "Campaign Start Date": "01-11-2025",
+                "Campaign End Date": "01-11-2025",
+                "Size": "545",
+                "Duration": "454",
+                "Amount": "545"
+            }
+        ]
+    }
+}

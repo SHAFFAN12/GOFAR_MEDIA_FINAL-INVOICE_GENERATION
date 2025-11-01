@@ -1,0 +1,7 @@
+﻿Pillow
+fpdf2
+python-dateutil
+tkcalendar
+num2words
+pdf2image
+PyMuPDF
