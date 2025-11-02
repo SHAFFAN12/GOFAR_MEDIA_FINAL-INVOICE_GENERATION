@@ -23,8 +23,10 @@ class DocumentApp(ctk.CTk):
         self.line_item_entries = []
         self.error_labels = {}
         self.earnings_entries = []
+        self.is_editing_mode = False
 
         self._setup_ui()
+        self.load_form_fields() # Initial load
 
     def _setup_ui(self):
         # -------- Sidebar for Selections --------
@@ -36,10 +38,15 @@ class DocumentApp(ctk.CTk):
         # Company dropdown
         self.company_var = ctk.StringVar()
         ctk.CTkLabel(sidebar, text="Select Company:", anchor="w").pack(pady=(0, 5))
-        self.company_menu = ctk.CTkOptionMenu(sidebar, variable=self.company_var,
-                                              values=["GoFar Media", "Glory Enterprises"])
+        company_list = list(self.doc_manager.config.get("companies", {}).keys())
+        self.company_menu = ctk.CTkOptionMenu(
+            sidebar, variable=self.company_var,
+            values=company_list,
+            command=lambda _: self.load_form_fields() # Reload form on company change
+        )
         self.company_menu.pack(fill="x", pady=(0, 15))
-        self.company_var.set("GoFar Media")
+        if company_list:
+            self.company_var.set(company_list[0])
 
         # Document type dropdown
         self.doc_type_var = ctk.StringVar()
@@ -60,17 +67,20 @@ class DocumentApp(ctk.CTk):
         main_frame.pack(side="right", fill="both", expand=True, padx=10, pady=10)
 
         self.canvas = ctk.CTkCanvas(main_frame, highlightthickness=0)
-        self.scroll_frame = ctk.CTkFrame(self.canvas)
+        self.scroll_frame = ctk.CTkFrame(self.canvas, corner_radius=15)
         self.scroll_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
         scrollbar = ctk.CTkScrollbar(main_frame, orientation="vertical", command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=scrollbar.set)
 
-        self.canvas.create_window((0, 0), window=self.scroll_frame, anchor="nw")
+        self.canvas.create_window((0, 0), window=self.scroll_frame, anchor="nw", width=main_frame.winfo_width() - scrollbar.winfo_width())
         self.canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
     # ---------- FORM BUILDING ----------
     def load_form_fields(self):
+        # When loading fields, assume we are not in edit mode unless loading a file.
+        self.is_editing_mode = False
+        self.focus_set()  # Move focus away from child widgets before destroying them
         for widget in self.scroll_frame.winfo_children():
             widget.destroy()
         self.entry_widgets.clear()
@@ -78,12 +88,19 @@ class DocumentApp(ctk.CTk):
         self.earnings_entries.clear()
 
         doc_type = self.doc_type_var.get()
+        company = self.company_var.get()
         template = self.doc_manager.templates.get(doc_type, {})
 
         ctk.CTkLabel(self.scroll_frame, text=f"{doc_type} Form",
                      font=("Helvetica", 20, "bold")).pack(pady=(10, 15))
 
+        # --- Special handling for Invoice No ---
+        if "Invoice" in doc_type:
+            invoice_no = self.doc_manager.invoice_generator.peek_next(company)
+            self._add_form_field("Invoice No", "readonly", default_value=invoice_no)
+
         for field, field_type in template.get("header_fields", []):
+            if field == "Invoice No": continue # Skip manual addition
             self._add_form_field(field, field_type)
 
         if doc_type in ["Invoice", "Sales Tax Invoice"]:
@@ -93,7 +110,7 @@ class DocumentApp(ctk.CTk):
         elif doc_type == "Salary Slip":
             self._add_salary_slip_sections(template)
 
-    def _add_form_field(self, field, field_type):
+    def _add_form_field(self, field, field_type, default_value=None):
         frame = ctk.CTkFrame(self.scroll_frame, corner_radius=10)
         frame.pack(fill="x", pady=5, padx=15)
 
@@ -103,6 +120,12 @@ class DocumentApp(ctk.CTk):
             entry = DateEntry(frame, date_pattern='dd-mm-yyyy')
         else:
             entry = ctk.CTkEntry(frame, width=300, placeholder_text=f"Enter {field}")
+        
+        if default_value:
+            entry.insert(0, default_value)
+        
+        if field_type == "readonly":
+            entry.configure(state="disabled")
 
         entry.pack(side="left", padx=5, pady=5)
         self.entry_widgets[field] = entry
@@ -170,12 +193,15 @@ class DocumentApp(ctk.CTk):
         doc_type = self.doc_type_var.get()
         template = self.doc_manager.templates.get(doc_type, {})
         data = {}
-        for field, _ in template.get("header_fields", []):
+        for field, f_type in template.get("header_fields", []):
+            # Also collect the readonly invoice number
+            if field not in self.entry_widgets: continue
             widget = self.entry_widgets[field]
             if isinstance(widget, DateEntry):
                 data[field] = widget.get_date().strftime("%d-%m-%Y")
             else:
                 data[field] = widget.get().strip()
+
         if doc_type == "Salary Slip":
             for name, entry in self.earnings_entries:
                 data[name] = entry.get().strip()
@@ -200,14 +226,28 @@ class DocumentApp(ctk.CTk):
                 return
 
             data = self.collect_form_data()
-            valid = self.doc_manager.templates[doc_type]["template_class"].validate_data(data)
-            if not valid:
-                messagebox.showerror("Validation Error", "Some required fields are missing.")
-                return
 
-            filepath = self.doc_manager.generate_document(company=company, doc_type=doc_type, data=data)
+            # --- Perform validation before generation ---
+            template = self.doc_manager.templates.get(doc_type, {})
+            template_class = template.get("template_class")
+            if template_class:
+                is_valid, message = template_class.validate_data(data)
+                if not is_valid:
+                    messagebox.showerror("Validation Error", message)
+                    return
+
+            filepath = self.doc_manager.generate_document(
+                company=company, 
+                doc_type=doc_type, 
+                data=data,
+                is_resave=self.is_editing_mode 
+            )
             if messagebox.askyesno("Success", f"Document generated successfully!\n{filepath}\n\nAdd signature?"):
                 PDFSignatureApp(ctk.CTkToplevel(self), filepath)
+            
+            # Refresh the form to show the next invoice number and reset state
+            self.load_form_fields()
+
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
@@ -225,7 +265,10 @@ class DocumentApp(ctk.CTk):
 
             with open(json_path, "r") as f:
                 saved_data = json.load(f)
+            
             self.populate_form_with_data(saved_data)
+            self.is_editing_mode = True # Set edit mode AFTER populating
+
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
@@ -236,18 +279,36 @@ class DocumentApp(ctk.CTk):
 
         self.company_var.set(company)
         self.doc_type_var.set(doc_type)
-        self.load_form_fields()
+        # This will build the form, including a placeholder for the next invoice number
+        self.load_form_fields() 
+
+        # Now, overwrite the form fields with the loaded data
+        # Overwrite the auto-generated invoice number with the one from the loaded file
+        if "Invoice" in doc_type and "Invoice No" in self.entry_widgets:
+            saved_invoice_no = form_data.get("Invoice No", "")
+            if saved_invoice_no:
+                widget = self.entry_widgets["Invoice No"]
+                widget.configure(state="normal") # Enable to modify
+                widget.delete(0, "end")
+                widget.insert(0, saved_invoice_no)
+                widget.configure(state="disabled") # Set back to readonly
 
         for field, widget in self.entry_widgets.items():
+            # Skip the invoice field as it's already handled
+            if field == "Invoice No" and "Invoice" in doc_type:
+                continue
+
             val = form_data.get(field, "")
             if isinstance(widget, DateEntry):
                 try:
                     widget.set_date(datetime.strptime(val, "%d-%m-%Y"))
-                except:
-                    pass
+                except (ValueError, TypeError):
+                    pass # Ignore invalid date formats in old data
             else:
-                widget.delete(0, "end")
-                widget.insert(0, str(val))
+                # Check if widget is disabled before trying to change it
+                if widget.cget("state") != "disabled":
+                    widget.delete(0, "end")
+                    widget.insert(0, str(val))
 
         if doc_type == "Request Letter":
             self.content_text.delete("1.0", "end")

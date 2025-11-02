@@ -1,0 +1,21 @@
+{
+    "company": "GoFar Media",
+    "doc_type": "Invoice",
+    "form_data": {
+        "M/s": "iououoi",
+        "Campaign": "908098",
+        "Date": "02-11-2025",
+        "Invoice No": "GFM/34649174-1",
+        "Invoice Month": "iui",
+        "line_items": [
+            {
+                "Description": "9998",
+                "Campaign Start Date": "02-11-2025",
+                "Campaign End Date": "02-11-2025",
+                "Size": "9880",
+                "Duration": "08080",
+                "Amount": "080809"
+            }
+        ]
+    }
+}

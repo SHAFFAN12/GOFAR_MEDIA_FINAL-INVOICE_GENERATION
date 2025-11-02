@@ -1735,6 +1735,9 @@
    'C:\\Program '
    'Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\\Lib\\inspect.py',
    'PYMODULE'),
+  ('invoice_logic',
+   'C:\\Users\\User\\Downloads\\Final_invoice_generator-main\\Final_invoice_generator-main\\src\\invoice_logic.py',
+   'PYMODULE'),
   ('ipaddress',
    'C:\\Program '
    'Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\\Lib\\ipaddress.py',

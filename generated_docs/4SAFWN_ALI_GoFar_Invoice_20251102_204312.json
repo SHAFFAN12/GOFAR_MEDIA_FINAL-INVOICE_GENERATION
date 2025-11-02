@@ -1,0 +1,21 @@
+{
+    "company": "GoFar Media",
+    "doc_type": "Invoice",
+    "form_data": {
+        "M/s": "4SAFWN ALI",
+        "Campaign": "44",
+        "Date": "02-11-2025",
+        "Invoice No": "GFM/34649174-7",
+        "Invoice Month": "54",
+        "line_items": [
+            {
+                "Description": "54",
+                "Campaign Start Date": "02-11-2025",
+                "Campaign End Date": "02-11-2025",
+                "Size": "454",
+                "Duration": "54",
+                "Amount": "5"
+            }
+        ]
+    }
+}

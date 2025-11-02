@@ -17,7 +17,7 @@ class InvoiceTemplate(BaseTemplate):
                 ("M/s", "text"),
                 ("Campaign", "text"),
                 ("Date", "date"),
-                ("Invoice No", "text"),
+                ("Invoice No", "readonly"),
                 ("Invoice Month", "text")
             ],
             "line_items": {
@@ -36,17 +36,25 @@ class InvoiceTemplate(BaseTemplate):
             }
         }
 
-    def validate_data(self, data: Dict[str, Any]) -> bool:
-        required = ["M/s", "Campaign", "Date", "Invoice No", "line_items", "Invoice Month"]
+    def validate_data(self, data: Dict[str, Any]) -> (bool, str):
+        # Invoice No is now auto-generated, so it's not required in the form data validation
+        required = ["M/s", "Campaign", "Date", "Invoice Month"]
         for field in required:
-            if field not in data or not data[field]:
-                return False
-        if not isinstance(data["line_items"], list):
-            return False
-        for item in data["line_items"]:
-            if not all(k in item for k in self.get_template()["line_items"]["columns"]):
-                return False
-        return True
+            if not data.get(field):
+                return False, f"'{field}' is a required field."
+
+        if not data.get("line_items"):
+             return False, "Please add at least one line item to the invoice."
+        
+        if not isinstance(data.get("line_items"), list):
+            return False, "Line items data is corrupted."
+            
+        # Validate that all required columns are present in each line item
+        for i, item in enumerate(data["line_items"]):
+            for col in self.get_template()["line_items"]["columns"]:
+                if not item.get(col):
+                    return False, f"Missing value for '{col}' in line item #{i+1}."
+        return True, ""
 
     def generate_pdf_content(self, pdf: FPDF, data: Dict[str, Any]) -> None:
         pdf.set_font("Arial", 'B', 16)

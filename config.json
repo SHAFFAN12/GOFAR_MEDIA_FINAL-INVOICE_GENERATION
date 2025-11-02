@@ -1,0 +1,12 @@
+{
+  "companies": {
+    "GoFar Media": {
+      "invoice_pattern": "GFM/34649174-{}",
+      "letterhead": "gofar_media.png"
+    },
+    "Glory Enterprises": {
+      "invoice_pattern": "GE/SD/363158-8-{}",
+      "letterhead": "glory_enterprises.jpg"
+    }
+  }
+}
