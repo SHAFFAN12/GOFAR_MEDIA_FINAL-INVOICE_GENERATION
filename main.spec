@@ -5,7 +5,13 @@ a = Analysis(
     ['src\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[('src/templates', 'src/templates'), ('assets', 'assets'), ('poppler', 'poppler')],
+    datas=[
+        ('src/templates', 'src/templates'),
+        ('assets', 'assets'),
+        ('poppler', 'poppler'),
+        ('config.json', '.'),
+        ('invoice_counter.json', '.')
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

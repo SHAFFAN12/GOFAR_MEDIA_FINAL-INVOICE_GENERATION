@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from utils import resource_path
 
 class InvoiceNumberGenerator:
     """
@@ -7,8 +8,11 @@ class InvoiceNumberGenerator:
     Uses a 'peek' and 'commit' system to prevent skipping numbers on error.
     """
     def __init__(self, counter_file='invoice_counter.json', config_file='config.json'):
-        self.counter_file = Path(__file__).parent.parent / counter_file
-        self.config_file = Path(__file__).parent.parent / config_file
+        self.counter_file = Path(resource_path(counter_file))
+        if Path(config_file).is_absolute():
+            self.config_file = Path(config_file)
+        else:
+            self.config_file = Path(resource_path(config_file))
         self.counters = self._load_counters()
         self.config = self._load_config()
 

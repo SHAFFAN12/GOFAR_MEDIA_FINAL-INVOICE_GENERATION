@@ -7,20 +7,8 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, Optional
 from pdf_generator import PDFGenerator
-from utils import get_output_dir
+from utils import get_output_dir, resource_path
 from invoice_logic import InvoiceNumberGenerator
-
-
-def resource_path(relative_path: str) -> str:
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    if hasattr(sys, '_MEIPASS'):
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = Path(sys._MEIPASS)
-    else:
-        # Not in a PyInstaller bundle, so the base path is the project root
-        base_path = Path(__file__).parent.parent
-
-    return str(base_path / relative_path)
 
 def _sanitize_filename(name: str) -> str:
     """Sanitizes a string to be safe for use in a filename."""
@@ -34,7 +22,16 @@ class DocumentManager:
     
     def __init__(self, config_file='config.json'):
         """Initialize with loaded templates."""
-        self.config_file = Path(__file__).parent.parent / config_file
+        try:
+            # First try using resource_path
+            self.config_file = Path(resource_path(config_file))
+            if not self.config_file.exists() and hasattr(sys, '_MEIPASS'):
+                # If we're in a PyInstaller bundle and resource_path failed, try executable directory
+                self.config_file = Path(sys.executable).parent / config_file
+        except Exception:
+            # If all else fails, try current directory
+            self.config_file = Path(config_file)
+            
         self.config = self._load_config()
         self.templates = self._load_templates()
         self.signature_path: Optional[str] = None
