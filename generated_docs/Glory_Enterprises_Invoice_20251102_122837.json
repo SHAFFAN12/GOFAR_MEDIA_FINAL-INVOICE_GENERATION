@@ -1,0 +1,29 @@
+{
+    "company": "Glory Enterprises",
+    "doc_type": "Invoice",
+    "form_data": {
+        "M/s": "45",
+        "Campaign": "454",
+        "Date": "02-11-2025",
+        "Invoice No": "545",
+        "Invoice Month": "45",
+        "line_items": [
+            {
+                "Description": "45",
+                "Campaign Start Date": "02-11-202502-11-2025",
+                "Campaign End Date": "402-11-2025",
+                "Size": "545",
+                "Duration": "45",
+                "Amount": "454"
+            },
+            {
+                "Description": "545",
+                "Campaign Start Date": "02-11-202502-11-2025",
+                "Campaign End Date": "02-11-202502-11-2025",
+                "Size": "454",
+                "Duration": "5",
+                "Amount": "545"
+            }
+        ]
+    }
+}

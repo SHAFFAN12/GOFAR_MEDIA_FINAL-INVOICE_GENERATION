@@ -1,0 +1,29 @@
+{
+    "company": "GoFar Media",
+    "doc_type": "Invoice",
+    "form_data": {
+        "M/s": "65",
+        "Campaign": "65",
+        "Date": "02-11-2025",
+        "Invoice No": "65",
+        "Invoice Month": "655",
+        "line_items": [
+            {
+                "Description": "565",
+                "Campaign Start Date": "65",
+                "Campaign End Date": "65",
+                "Size": "65",
+                "Duration": "65",
+                "Amount": "5"
+            },
+            {
+                "Description": "6565",
+                "Campaign Start Date": "",
+                "Campaign End Date": "565",
+                "Size": "656",
+                "Duration": "56",
+                "Amount": "565"
+            }
+        ]
+    }
+}
