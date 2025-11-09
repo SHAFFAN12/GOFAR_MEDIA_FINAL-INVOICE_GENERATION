@@ -21,15 +21,21 @@ def get_scale(img, page_rect):
     return scale_x, scale_y
 
 def get_output_dir() -> Path:
-    """Gets the directory for generated documents."""
+    """
+    Gets the directory for generated documents.
+    For an installed app, uses the user's Desktop.
+    For development, uses a local folder in the project root.
+    """
     if hasattr(sys, '_MEIPASS'):
-        # For bundled app, create docs folder next to the executable
-        output_dir = Path(sys.executable).parent / "generated_docs"
+        # For a bundled app, use the user's Desktop to avoid permission issues
+        # and for easy access.
+        output_dir = Path.home() / "Desktop" / "Invoice Genius Docs"
     else:
-        # For development, create it at the project root
+        # For development, create a local folder at the project root
         output_dir = Path(__file__).parent.parent / "generated_docs"
     
-    output_dir.mkdir(exist_ok=True)
+    # Create the directory if it doesn't exist
+    output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 
 from PIL import Image
