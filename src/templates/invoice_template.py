@@ -14,6 +14,7 @@ class InvoiceTemplate(BaseTemplate):
         return {
             "type": self.template_type,
             "header_fields": [
+                ("Custom Title (Optional)", "text"),
                 ("M/s", "text"),
                 ("Campaign", "text"),
                 ("Date", "date"),
@@ -58,7 +59,7 @@ class InvoiceTemplate(BaseTemplate):
 
     def generate_pdf_content(self, pdf: FPDF, data: Dict[str, Any]) -> None:
         pdf.set_font("Arial", 'B', 16)
-        title = self.template_type.upper()
+        title = (data.get("Custom Title (Optional)") or self.template_type).upper()
         pdf.cell(0, 10, title, 0, 1, 'C')
         pdf.set_draw_color(0, 0, 0)
         pdf.set_line_width(0.4)

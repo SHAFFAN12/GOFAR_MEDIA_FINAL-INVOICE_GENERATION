@@ -1,0 +1,22 @@
+{
+    "company": "GoFar Media",
+    "doc_type": "Invoice",
+    "form_data": {
+        "Custom Title (Optional)": "SIndh Invoice",
+        "M/s": "iuio",
+        "Campaign": "uouo",
+        "Date": "09-11-2025",
+        "Invoice No": "GFM/34649174-129",
+        "Invoice Month": "july",
+        "line_items": [
+            {
+                "Description": "9898",
+                "Campaign Start Date": "09-11-2025",
+                "Campaign End Date": "09-11-2025",
+                "Size": "898",
+                "Duration": "989",
+                "Amount": "898"
+            }
+        ]
+    }
+}

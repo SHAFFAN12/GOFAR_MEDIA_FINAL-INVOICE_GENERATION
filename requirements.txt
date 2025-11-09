@@ -5,3 +5,4 @@ tkcalendar
 num2words
 pdf2image
 PyMuPDF
+customtkinter

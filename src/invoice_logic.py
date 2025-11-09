@@ -69,3 +69,18 @@ class InvoiceNumberGenerator:
         last_number = self.counters.get(company_key, 0)
         self.counters[company_key] = last_number + 1
         self._save_counters()
+
+    def set_counter(self, company_name: str, new_next_number: int):
+        """
+        Sets the counter for a company to a specific value.
+        The value provided should be the desired *next* invoice number.
+        """
+        if not isinstance(new_next_number, int) or new_next_number < 1:
+            raise ValueError("Invoice number must be a positive integer.")
+            
+        company_key = self._get_company_key(company_name)
+        # We store the 'last used' number, so subtract 1 from the desired 'next' number.
+        self.counters[company_key] = new_next_number - 1
+        self._save_counters()
+        # Reload counters from disk to ensure consistency
+        self.counters = self._load_counters()

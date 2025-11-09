@@ -4,6 +4,7 @@ from tkcalendar import DateEntry
 from datetime import datetime
 from document_manager import DocumentManager
 from signer import PDFSignatureApp
+from splash import SplashScreen
 from utils import get_output_dir
 from pathlib import Path
 import json
@@ -11,10 +12,66 @@ import json
 ctk.set_appearance_mode("System")  # "Dark", "Light", or "System"
 ctk.set_default_color_theme("blue")  # Options: "blue", "dark-blue", "green"
 
+class CounterManagerDialog(ctk.CTkToplevel):
+    def __init__(self, parent, doc_manager):
+        super().__init__(parent)
+        self.doc_manager = doc_manager
+        self.title("Manage Invoice Counters")
+        self.geometry("500x400")
+        self.lift()
+        self.attributes("-topmost", True)
+        self.transient(parent)
+
+        self.entries = {}
+
+        ctk.CTkLabel(self, text="Set Next Invoice Number", font=("Helvetica", 16, "bold")).pack(pady=15)
+
+        scroll_frame = ctk.CTkScrollableFrame(self)
+        scroll_frame.pack(fill="both", expand=True, padx=15, pady=10)
+
+        # Reload counters to ensure we have the latest
+        self.doc_manager.invoice_generator.counters = self.doc_manager.invoice_generator._load_counters()
+
+        for company in self.doc_manager.config.get("companies", {}).keys():
+            frame = ctk.CTkFrame(scroll_frame)
+            frame.pack(fill="x", pady=5)
+
+            company_key = self.doc_manager.invoice_generator._get_company_key(company)
+            last_number = self.doc_manager.invoice_generator.counters.get(company_key, 0)
+            next_number = last_number + 1
+
+            ctk.CTkLabel(frame, text=company, width=200, anchor="w").pack(side="left", padx=10)
+            
+            entry = ctk.CTkEntry(frame, width=100)
+            entry.insert(0, str(next_number))
+            entry.pack(side="left", padx=10)
+            self.entries[company] = entry
+
+        save_button = ctk.CTkButton(self, text="Save and Close", command=self.save_and_close)
+        save_button.pack(pady=15)
+
+    def save_and_close(self):
+        try:
+            for company, entry in self.entries.items():
+                new_val_str = entry.get()
+                if not new_val_str.isdigit():
+                    messagebox.showerror("Invalid Input", f"'{new_val_str}' is not a valid number for {company}.", parent=self)
+                    return
+                
+                new_val = int(new_val_str)
+                self.doc_manager.invoice_generator.set_counter(company, new_val)
+            
+            messagebox.showinfo("Success", "Invoice counters updated successfully.\nThe form will now reload.", parent=self)
+            self.master.load_form_fields() # Reload main form
+            self.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}", parent=self)
+
+
 class DocumentApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("🧾 Document Generator")
+        self.title("Invoice Genius")
         self.geometry("900x700")
         self.minsize(850, 600)
 
@@ -61,6 +118,13 @@ class DocumentApp(ctk.CTk):
         # Buttons
         ctk.CTkButton(sidebar, text="🧾 Generate Document", command=self.generate_document, width=180).pack(pady=10)
         ctk.CTkButton(sidebar, text="📂 Load & Edit", command=self.load_document_for_edit, width=180).pack(pady=5)
+        ctk.CTkButton(sidebar, text="🔢 Manage Counters", command=self.open_counter_manager, width=180).pack(pady=5)
+
+
+        # Developer Credit
+        ctk.CTkLabel(sidebar, text="Developed by\nDevDuo Innovation", font=("Helvetica", 10), text_color="gray").pack(side="bottom", pady=20)
+
+
 
         # -------- Main Content (Scrollable Form) --------
         main_frame = ctk.CTkFrame(self, corner_radius=15)
@@ -251,6 +315,11 @@ class DocumentApp(ctk.CTk):
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
+    def open_counter_manager(self):
+        dialog = CounterManagerDialog(self, self.doc_manager)
+        dialog.grab_set() # Make dialog modal
+
+
     # ---------- LOAD EXISTING DOCUMENT ----------
     def load_document_for_edit(self):
         try:
@@ -321,7 +390,14 @@ class DocumentApp(ctk.CTk):
             for item in form_data.get("line_items", []):
                 self._add_line_item_row(template)
                 for i, (col, val) in enumerate(item.items()):
-                    self.line_item_entries[-1][i].insert(0, val)
+                    widget = self.line_item_entries[-1][i]
+                    if isinstance(widget, DateEntry):
+                        try:
+                            widget.set_date(datetime.strptime(val, "%d-%m-%Y"))
+                        except (ValueError, TypeError):
+                            pass # Ignore invalid date formats
+                    else:
+                        widget.insert(0, val)
         elif doc_type == "Salary Slip":
             for name, entry in self.earnings_entries:
                 entry.delete(0, "end")
@@ -329,4 +405,15 @@ class DocumentApp(ctk.CTk):
 
 if __name__ == "__main__":
     app = DocumentApp()
+    app.withdraw()
+
+    splash = SplashScreen(app)
+
+    def show_main_window():
+        app.deiconify()
+        splash.fade_out_and_destroy()
+
+    # Schedule the main window to appear after 3500ms
+    app.after(3500, show_main_window)
+    
     app.mainloop()
